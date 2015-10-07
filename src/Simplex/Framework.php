@@ -8,6 +8,7 @@
 
 namespace Simplex;
 
+use Symfony\Component\EventDispatcher\EventDispatcher;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Controller\ControllerResolverInterface;
@@ -17,10 +18,12 @@ use Symfony\Component\Routing\Matcher\UrlMatcherInterface;
 class Framework {
 	protected $matcher;
 	protected $resolver;
+	protected $dispatcher;
 
-	public function __construct(UrlMatcherInterface $matcher,ControllerResolverInterface $resolver){
+	public function __construct(UrlMatcherInterface $matcher,ControllerResolverInterface $resolver, EventDispatcher $dispatcher){
 		$this->matcher = $matcher;
 		$this->resolver = $resolver;
+		$this->dispatcher = $dispatcher;
 	}
 
 	public function handle(Request $request){
@@ -33,15 +36,16 @@ class Framework {
 			$arguments = $this->resolver->getArguments($request,$controller);
 
 			$response = call_user_func_array($controller,$arguments);
-			return $response;
 
 		}catch (ResourceNotFoundException $e) {
 			$response = new Response('Not Found',404);
-			return $response;
 
 		}catch (\Exception $e) {
 			$response = new Response('An error occurred '.$e->getMessage(),500);
-			return $response;
+
 		}
+		$this->dispatcher->dispatch('response',new ResponseEvent($request,$response));
+
+		return $response;
 	}
 }

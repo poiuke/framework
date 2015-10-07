@@ -10,14 +10,15 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing;
 use Symfony\Component\HttpKernel;
+use Symfony\Component\EventDispatcher\EventDispatcher;
 
-function render_template($request){
+/*function render_template($request){
 	extract($request->attributes->all(),EXTR_SKIP);
 	ob_start();
 	//require sprintf(__DIR__.'/../src/pages/%s.php',$_route);
 	require __DIR__.'/../src/pages/'.$_route.'.php';
 	return new Response(ob_get_clean());
-}
+}*/
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -29,7 +30,11 @@ $context = new Routing\RequestContext();
 $matcher = new Routing\Matcher\UrlMatcher($routes,$context);
 $resolver = new HttpKernel\Controller\ControllerResolver();
 
-$framework = new Simplex\Framework($matcher,$resolver);
+$dispatcher = new EventDispatcher();
+$dispatcher->addSubscriber(new \Simplex\GoogleListener());
+$dispatcher->addSubscriber(new \Simplex\ContentLengthListener());
+
+$framework = new Simplex\Framework($matcher,$resolver,$dispatcher);
 $response = $framework->handle($request);
 
 $response->send();
