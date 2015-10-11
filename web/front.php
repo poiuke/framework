@@ -31,10 +31,15 @@ $matcher = new Routing\Matcher\UrlMatcher($routes,$context);
 $resolver = new HttpKernel\Controller\ControllerResolver();
 
 $dispatcher = new EventDispatcher();
+$dispatcher->addSubscriber(new HttpKernel\EventListener\RouterListener($matcher));
+$listener = new HttpKernel\EventListener\ExceptionListener('Canlendar\\Controller\\ErrorController::errorAction');
+$dispatcher->addSubscriber($listener);
+$dispatcher->addSubscriber(new \Simplex\StringResponseListener());
 $dispatcher->addSubscriber(new \Simplex\GoogleListener());
 $dispatcher->addSubscriber(new \Simplex\ContentLengthListener());
 
-$framework = new Simplex\Framework($matcher,$resolver,$dispatcher);
+$framework = new Simplex\Framework($dispatcher,$resolver);
+
 $response = $framework->handle($request);
 
 $response->send();
